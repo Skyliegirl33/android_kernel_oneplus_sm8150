@@ -586,13 +586,12 @@ void usb_sg_cancel(struct usb_sg_request *io)
 	int i, retval;
 
 	spin_lock_irqsave(&io->lock, flags);
-	if (io->status || io->count == 0) {
+	if (io->status) {
 		spin_unlock_irqrestore(&io->lock, flags);
 		return;
 	}
 	/* shut everything down */
 	io->status = -ECONNRESET;
-	io->count++;		/* Keep the request alive until we're done */
 	spin_unlock_irqrestore(&io->lock, flags);
 
 	for (i = io->entries - 1; i >= 0; --i) {
@@ -606,12 +605,6 @@ void usb_sg_cancel(struct usb_sg_request *io)
 			dev_warn(&io->dev->dev, "%s, unlink --> %d\n",
 				 __func__, retval);
 	}
-
-	spin_lock_irqsave(&io->lock, flags);
-	io->count--;
-	if (!io->count)
-		complete(&io->complete);
-	spin_unlock_irqrestore(&io->lock, flags);
 }
 EXPORT_SYMBOL_GPL(usb_sg_cancel);
 
@@ -825,11 +818,9 @@ int usb_string(struct usb_device *dev, int index, char *buf, size_t size)
 
 	if (dev->state == USB_STATE_SUSPENDED)
 		return -EHOSTUNREACH;
-	if (size <= 0 || !buf)
+	if (size <= 0 || !buf || !index)
 		return -EINVAL;
 	buf[0] = 0;
-	if (index <= 0 || index >= 256)
-		return -EINVAL;
 	tbuf = kmalloc(256, GFP_NOIO);
 	if (!tbuf)
 		return -ENOMEM;
@@ -1191,7 +1182,8 @@ void usb_disable_device(struct usb_device *dev, int skip_ep0)
 			dev->actconfig->interface[i] = NULL;
 		}
 
-		usb_disable_usb2_hardware_lpm(dev);
+		if (dev->usb2_hw_lpm_enabled == 1)
+			usb_set_usb2_hardware_lpm(dev, 0);
 		usb_unlocked_disable_lpm(dev);
 		usb_disable_ltm(dev);
 
