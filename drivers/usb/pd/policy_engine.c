@@ -417,7 +417,6 @@ struct usbpd {
 	bool			peer_usb_comm;
 	bool			peer_pr_swap;
 	bool			peer_dr_swap;
-/* @bsp, 2019/04/27 usb & PD porting */
 	bool		oem_bypass;
 	bool		periph_direct;
 
@@ -1367,7 +1366,6 @@ static void usbpd_set_state(struct usbpd *pd, enum usbpd_state next_state)
 			pd->ss_lane_svid = 0x0;
 		}
 
-		dual_role_instance_changed(pd->dual_role);
 
 		val.intval = 1; /* Rp-1.5A; SinkTxNG for PD 3.0 */
 		power_supply_set_property(pd->usb_psy,
@@ -1466,8 +1464,7 @@ static void usbpd_set_state(struct usbpd *pd, enum usbpd_state next_state)
 			}
 
 			usbpd_err(&pd->dev, "Invalid request: %08x\n", pd->rdo);
-/* @bsp, 2019/04/27 usb & PD porting */
-/*handle pixel-sink connect failed issue*/
+
 			if (pd->oem_bypass) {
 				usbpd_info(&pd->dev, "oem bypass invalid request!\n");
 			} else {
@@ -1608,7 +1605,6 @@ static void usbpd_set_state(struct usbpd *pd, enum usbpd_state next_state)
 	case PE_SNK_STARTUP:
 		if (pd->current_dr == DR_NONE || pd->current_dr == DR_UFP) {
 			pd->current_dr = DR_UFP;
-
 			ret = power_supply_get_property(pd->usb_psy,
 					POWER_SUPPLY_PROP_REAL_TYPE, &val);
 			if (!ret) {
@@ -1618,8 +1614,6 @@ static void usbpd_set_state(struct usbpd *pd, enum usbpd_state next_state)
 					start_usb_peripheral(pd);
 			}
 		}
-
-		dual_role_instance_changed(pd->dual_role);
 
 		pd_reset_protocol(pd);
 
@@ -1945,17 +1939,10 @@ static void handle_vdm_rx(struct usbpd *pd, struct rx_msg *rx_msg)
 	switch (cmd_type) {
 	case SVDM_CMD_TYPE_INITIATOR:
 		if (cmd != USBPD_SVDM_ATTENTION) {
-//			if (pd->spec_rev == USBPD_REV_30) {
-//				ret = pd_send_msg(pd, MSG_NOT_SUPPORTED, NULL,
-//						0, SOP_MSG);
-//				if (ret)
-//					usbpd_set_state(pd, PE_SEND_SOFT_RESET);
-//			} else {
 				usbpd_send_svdm(pd, svid, cmd,
 						SVDM_CMD_TYPE_RESP_NAK,
 						SVDM_HDR_OBJ_POS(vdm_hdr),
 						NULL, 0);
-//			}
 		}
 		break;
 
@@ -2427,7 +2414,6 @@ enable_reg:
 	if (!pd->vbus) {
 		pd->vbus = devm_regulator_get(pd->dev.parent, "vbus");
 		if (IS_ERR(pd->vbus)) {
-			pd->vbus = NULL;
 			usbpd_err(&pd->dev, "Unable to get vbus\n");
 			return -EAGAIN;
 		}
@@ -2460,8 +2446,6 @@ enable_reg:
 /* For PD 3.0, check SinkTxOk before allowing initiating AMS */
 static inline bool is_sink_tx_ok(struct usbpd *pd)
 {
-//	if (pd->spec_rev == USBPD_REV_30)
-//		return pd->typec_mode == POWER_SUPPLY_TYPEC_SOURCE_HIGH;
 
 	return true;
 }
@@ -3447,10 +3431,6 @@ static int psy_changed(struct notifier_block *nb, unsigned long evt, void *ptr)
 		return ret;
 	}
 
-	/* add to start USB stack for USB3.1 compliance testing */
-	if (usb_compliance_mode)
-		pd->periph_direct = true;
-
 	/* Don't proceed if PE_START=0; start USB directly if needed */
 	if (pd->periph_direct && !val.intval && !pd->pd_connected &&
 			typec_mode >= POWER_SUPPLY_TYPEC_SOURCE_DEFAULT) {
@@ -3473,6 +3453,11 @@ static int psy_changed(struct notifier_block *nb, unsigned long evt, void *ptr)
 		}
 
 		return 0;
+	}
+
+	if (usb_compliance_mode) {
+		usbpd_info(&pd->dev, "start usb peripheral for testing");
+		start_usb_peripheral(pd);
 	}
 
 	ret = power_supply_get_property(pd->usb_psy,
@@ -3507,6 +3492,24 @@ static int psy_changed(struct notifier_block *nb, unsigned long evt, void *ptr)
 	if (pd->typec_mode == typec_mode)
 		return 0;
 
+	ret = power_supply_get_property(pd->usb_psy,
+			POWER_SUPPLY_PROP_REAL_TYPE, &val);
+	if (ret) {
+		usbpd_err(&pd->dev, "Unable to read USB TYPE: %d\n", ret);
+		return ret;
+	}
+
+	pd->psy_type = val.intval;
+
+	if ((typec_mode == POWER_SUPPLY_TYPEC_SOURCE_DEFAULT) ||
+		(typec_mode == POWER_SUPPLY_TYPEC_SOURCE_MEDIUM) ||
+		(typec_mode == POWER_SUPPLY_TYPEC_SOURCE_HIGH)) {
+		if (pd->psy_type == POWER_SUPPLY_TYPE_UNKNOWN) {
+			usbpd_err(&pd->dev, "typec_mode:%d, psy_type:%d\n",
+				typec_mode, pd->psy_type);
+			return 0;
+		}
+	}
 	pd->typec_mode = typec_mode;
 
 	usbpd_err(&pd->dev, "typec mode:%d present:%d type:%d orientation:%d\n",
@@ -4651,8 +4654,6 @@ struct usbpd *usbpd_create(struct device *parent)
 		pd->dual_role->drv_data = pd;
 	}
 
-/* @bsp, 2019/04/27 usb & PD porting */
-/*handle pixel-sink connect failed issue*/
 	pd->oem_bypass = true;
 	pd->periph_direct = false;
 	pd->current_pr = PR_NONE;

@@ -38,8 +38,6 @@
 #define USB_VENDOR_GENESYS_LOGIC		0x05e3
 #define HUB_QUIRK_CHECK_PORT_AUTOSUSPEND	0x01
 
-int deny_new_usb __read_mostly = 0;
-
 /* Protect struct usb_device->state and ->children members
  * Note: Both are also protected by ->dev.sem, except that ->state can
  * change to USB_STATE_NOTATTACHED even when the semaphore isn't held. */
@@ -3599,7 +3597,6 @@ static int hub_suspend(struct usb_interface *intf, pm_message_t msg)
 {
 	struct usb_hub		*hub = usb_get_intfdata(intf);
 	struct usb_device	*hdev = hub->hdev;
-	struct usb_hcd		*hcd = bus_to_hcd(hdev->bus);
 	unsigned		port1;
 	int			status;
 
@@ -3633,9 +3630,6 @@ static int hub_suspend(struct usb_interface *intf, pm_message_t msg)
 	}
 
 	if (hub_is_superspeed(hdev) && hdev->do_remote_wakeup) {
-		if (!hdev->parent && hcd->primary_hcd)
-			usb_phy_powerup(hcd->primary_hcd->usb3_phy);
-
 		/* Enable hub to send remote wakeup for all ports. */
 		for (port1 = 1; port1 <= hdev->maxchild; port1++) {
 			status = set_port_feature(hdev,
@@ -3645,9 +3639,6 @@ static int hub_suspend(struct usb_interface *intf, pm_message_t msg)
 					USB_PORT_FEAT_REMOTE_WAKE_OVER_CURRENT,
 					USB_PORT_FEAT_REMOTE_WAKE_MASK);
 		}
-
-		if (!hdev->parent && hcd->primary_hcd)
-			usb_phy_powerdown(hcd->primary_hcd->usb3_phy);
 	}
 
 	dev_dbg(&intf->dev, "%s\n", __func__);
@@ -4351,7 +4342,6 @@ static void hub_set_initial_usb2_lpm_policy(struct usb_device *udev)
 	if (hub)
 		connect_type = hub->ports[udev->portnum - 1]->connect_type;
 
-/* @bsp, 2019/04/27 usb & PD porting */
 	if (!udev->bos)
 		return;
 
@@ -4858,12 +4848,6 @@ static void hub_port_connect(struct usb_hub *hub, int port1, u16 portstatus,
 			goto done;
 		return;
 	}
-
-	if (deny_new_usb) {
-		dev_err(&port_dev->dev, "denied insert of USB device on port %d\n", port1);
-		goto done;
-	}
-
 	if (hub_is_superspeed(hub->hdev))
 		unit_load = 150;
 	else
@@ -5752,7 +5736,10 @@ int usb_reset_device(struct usb_device *udev)
 					cintf->needs_binding = 1;
 			}
 		}
-		usb_unbind_and_rebind_marked_interfaces(udev);
+
+		/* If the reset failed, hub_wq will unbind drivers later */
+		if (ret == 0)
+			usb_unbind_and_rebind_marked_interfaces(udev);
 	}
 
 	usb_autosuspend_device(udev);
