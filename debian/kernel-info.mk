@@ -11,7 +11,9 @@ VARIANT = android
 KERNEL_BASE_VERSION = 4.14
 
 # The kernel cmdline to use
-KERNEL_BOOTIMAGE_CMDLINE = androidboot.hardware=qcom androidboot.console=ttyMSM0 androidboot.memcg=1 lpm_levels.sleep_disabled=1 video=vfb:640x400,bpp=32,memsize=3072000 msm_rtb.filter=0x237 service_locator.enable=1 swiotlb=2048 firmware_class.path=/vendor/firmware_mnt/image loop.max_part=7 androidboot.usbcontroller=a600000.dwc3 androidboot.vbmeta.avb_version=1.0 buildvariant=userdebug console=tty0 systempart=/dev/disk/by-partlabel/system apparmor=1 security=apparmor androidboot.vbmeta.avb_version=1.0
+KERNEL_BOOTIMAGE_CMDLINE = androidboot.hardware=qcom androidboot.console=ttyMSM0 androidboot.memcg=1 lpm_levels.sleep_disabled=1 video=vfb:640x400,bpp=32,memsize=3072000 msm_rtb.filter=0x237 service_locator.enable=1 swiotlb=2048 firmware_class.path=/vendor/firmware_mnt/image loop.max_part=7 androidboot.usbcontroller=a600000.dwc3 androidboot.vbmeta.avb_version=1.0 buildvariant=userdebug console=tty0 apparmor=1 security=apparmor androidboot.vbmeta.avb_version=1.0 debug debug=y
+#KERNEL_BOOTIMAGE_CMDLINE = androidboot.hardware=qcom androidboot.console=ttyMSM0 video=vfb:640x400,bpp=32,memsize=3072000 msm_rtb.filter=0x237 ehci-hcd.park=3 lpm_levels.sleep_disabled=1 service_locator.enable=1 swiotlb=2048 androidboot.configfs=true androidboot.usbcontroller=a600000.dwc3 firmware_class.path=/vendor/firmware_mnt/imageloop.max_part=7 console=tty0 apparmor=1 security=apparmor
+#KERNEL_BOOTIMAGE_CMDLINE = console=ttyMSM0,115200,n8 androidboot.console=ttyMSM0 earlycon=msm_serial_dm,0xc1b0000 androidboot.hardware=qcom user_debug=31 msm_rtb.filter=0x237 ehci-hcd.park=3 lpm_levels.sleep_disabled=1 sched_enable_hmp=1 sched_enable_power_aware=1 service_locator.enable=1 swiotlb=2048 androidboot.configfs=true androidboot.usbcontroller=a600000.dwc3 firmware_class.path=/vendor/firmware_mnt/image loop.max_part=7 console=tty0
 
 # Slug for the device vendor. This is going to be used in the KERNELRELASE
 # and package names.
@@ -27,7 +29,7 @@ DEVICE_FULL_NAME = OnePlus 7 Pro
 KERNEL_DEFCONFIG = vendor/sm8150-perf_defconfig
 
 # Whether to include DTBs with the image. Use 0 (no) or 1.
-KERNEL_IMAGE_WITH_DTB = 1
+KERNEL_IMAGE_WITH_DTB = 0
 
 # Path to the DTB
 # If you leave this undefined, an attempt to find it automatically
@@ -35,7 +37,7 @@ KERNEL_IMAGE_WITH_DTB = 1
 KERNEL_IMAGE_DTB = arch/arm64/boot/dts/qcom/sm8150p-v2.dtb
 
 # Whether to include a DTB Overlay. Use 0 (no) or 1.
-KERNEL_IMAGE_WITH_DTB_OVERLAY = 1
+KERNEL_IMAGE_WITH_DTB_OVERLAY = 0
 
 # Path to the DTB overlay.
 # If you leave this undefined, an attempt to find it automatically
@@ -53,7 +55,7 @@ KERNEL_IMAGE_WITH_DTB_OVERLAY_IN_KERNEL = 0
 
 # Path to the DTB directory. Only define if KERNEL_IMAGE_DTB_OVERLAY_CONFIGURATION
 # is defined too.
-KERNEL_IMAGE_DTB_OVERLAY_DTB_DIRECTORY = arch/arm64/boot/dts/qcom
+#KERNEL_IMAGE_DTB_OVERLAY_DTB_DIRECTORY = arch/arm64/boot/dts/qcom
 
 # Various other settings that will be passed straight to mkbootimg
 KERNEL_BOOTIMAGE_PAGE_SIZE = 4096
@@ -78,7 +80,7 @@ KERNEL_BOOTIMAGE_VERSION = 1
 # Whether to build a flashable vbmeta.img. Please note that currently
 # only empty vbmeta images (disabling verified boot) can be generated.
 # Use 0 (no) or 1 (default).
-DEVICE_VBMETA_REQUIRED = 1
+DEVICE_VBMETA_REQUIRED = 0
 
 # Samsung devices require a special flag. Enable the following if your
 # device is a Samsung device that requires flag 0 to be present
