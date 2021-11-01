@@ -29,12 +29,12 @@ DEVICE_FULL_NAME = OnePlus 7 Pro
 KERNEL_DEFCONFIG = vendor/sm8150-perf_defconfig
 
 # Whether to include DTBs with the image. Use 0 (no) or 1.
-KERNEL_IMAGE_WITH_DTB = 0
+KERNEL_IMAGE_WITH_DTB = 1
 
 # Path to the DTB
 # If you leave this undefined, an attempt to find it automatically
 # will be made.
-KERNEL_IMAGE_DTB = arch/arm64/boot/dts/qcom/sm8150p-v2.dtb
+#KERNEL_IMAGE_DTB = arch/arm64/boot/dts/qcom/sm8150p-v2.dtb
 
 # Whether to include a DTB Overlay. Use 0 (no) or 1.
 KERNEL_IMAGE_WITH_DTB_OVERLAY = 1
@@ -42,7 +42,7 @@ KERNEL_IMAGE_WITH_DTB_OVERLAY = 1
 # Path to the DTB overlay.
 # If you leave this undefined, an attempt to find it automatically
 # will be made.
-KERNEL_IMAGE_DTB_OVERLAY = arch/arm64/boot/dts/qcom/sm8150-mtp-overlay.dtbo
+#KERNEL_IMAGE_DTB_OVERLAY = arch/arm64/boot/dts/qcom/sm8150-mtp-overlay.dtbo
 
 # Whether to include the DTB Overlay into the kernel image
 # Use 0 (no, default) or 1.
@@ -61,9 +61,9 @@ KERNEL_IMAGE_WITH_DTB_OVERLAY_IN_KERNEL = 0
 KERNEL_BOOTIMAGE_PAGE_SIZE = 4096
 KERNEL_BOOTIMAGE_BASE_OFFSET = 0x00000000
 KERNEL_BOOTIMAGE_KERNEL_OFFSET = 0x00008000
-KERNEL_BOOTIMAGE_INITRAMFS_OFFSET = 0x01000000
+KERNEL_BOOTIMAGE_INITRAMFS_OFFSET = 0x02000000
 KERNEL_BOOTIMAGE_SECONDIMAGE_OFFSET = 0x00f00000
-KERNEL_BOOTIMAGE_TAGS_OFFSET = 0x00000100
+KERNEL_BOOTIMAGE_TAGS_OFFSET = 0x01E00000
 
 # Kernel bootimage version. Defaults to 0 (legacy header).
 # As a rule of thumb:
@@ -71,7 +71,7 @@ KERNEL_BOOTIMAGE_TAGS_OFFSET = 0x00000100
 # Devices launched with Android 9: version 1
 # Devices launched with Android 10: version 2
 # Devices launched with Android 11: version 2 or 3 (GKI)
-KERNEL_BOOTIMAGE_VERSION = 0
+KERNEL_BOOTIMAGE_VERSION = 2
 
 ########################################################################
 # Android verified boot
@@ -160,4 +160,4 @@ DEB_BUILD_FOR = arm64
 KERNEL_ARCH = arm64
 
 # Kernel target to build
-KERNEL_BUILD_TARGET = Image
+KERNEL_BUILD_TARGET = Image-dtb
