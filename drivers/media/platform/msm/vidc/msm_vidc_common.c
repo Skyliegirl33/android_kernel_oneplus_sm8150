@@ -82,7 +82,7 @@ int msm_comm_g_ctrl_for_id(struct msm_vidc_inst *inst, int id)
 	};
 
 	rc = msm_comm_g_ctrl(inst, &ctrl);
-	return rc ? rc : ctrl.value;
+	return rc ? true : ctrl.value;
 }
 
 static struct v4l2_ctrl **get_super_cluster(struct msm_vidc_inst *inst,
