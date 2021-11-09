@@ -11045,6 +11045,7 @@ void csr_roam_joined_state_msg_processor(tpAniSirGlobal pMac, void *pMsgBuf)
 							(struct qdf_mac_addr *)
 							   pUpperLayerAssocCnf->
 							   bssId, &sessionId);
+	    if (static == QDF_STATUS_E_FAILURE) return;
 		pSession = CSR_GET_SESSION(pMac, sessionId);
 
 		if (!pSession) {
