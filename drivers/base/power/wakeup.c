@@ -20,6 +20,7 @@
 #include <linux/irq.h>
 #include <linux/interrupt.h>
 #include <linux/irqdesc.h>
+#include <linux/moduleparam.h>
 
 #include "power.h"
 #include <linux/wakeup_reason.h>
@@ -34,6 +35,10 @@ bool wl_blocker_debug = false;
 
 static void wakeup_source_deactivate(struct wakeup_source *ws);
 #endif
+
+
+static bool enable_ipa_ws = false;
+module_param(enable_ipa_ws, bool, 0644);
 
 /*
  * If set, the suspend/hibernate code will abort transitions to a sleep state
@@ -552,9 +557,10 @@ static void wakeup_source_activate(struct wakeup_source *ws)
 	unsigned int cec;
 
  	/* Fix for battery drains https://review.lineageos.org/c/LineageOS/android_kernel_motorola_msm8952/+/156126/1 */
-	if (!strncmp(ws->name, "IPA_WS", 6)) {
+	if (!enable_ipa_ws && !strncmp(ws->name, "IPA_WS", 6)) {
 		if (ws->active)
-			return;
+			wakeup_source_deactivate(ws);
+		return;
 	}
 
 	if (WARN_ONCE(wakeup_source_not_registered(ws),
@@ -718,7 +724,7 @@ static inline void update_prevent_sleep_time(struct wakeup_source *ws,
  * become inactive by decrementing the counter of wakeup events being processed
  * and incrementing the counter of registered wakeup events.
  */
-void wakeup_source_deactivate(struct wakeup_source *ws)
+static void wakeup_source_deactivate(struct wakeup_source *ws)
 {
 	unsigned int cnt, inpr, cec;
 	ktime_t duration;
